@@ -12,18 +12,17 @@ st.set_page_config(page_title="🎬 Movie Recommender", layout="wide")
 st.markdown("## 🎥 Content-Based Movie Recommender")
 st.markdown("Get movie recommendations based on genre similarity.")
 
-# === LOAD DATA ===
 @st.cache_data
 def load_data():
     try:
         df = pd.read_json("Data/movie_data.json")
-        df['genres'] = df['genres'].apply(lambda x: ' '.join(x) if isinstance(x, list) else str(x))
+        # Ensure 'genres' is a list before joining, else convert to an empty string
+        df['genres'] = df['genres'].apply(lambda x: ' '.join(x) if isinstance(x, list) else str(x) if x is not None else '')
         return df
     except Exception as e:
         st.error(f"⚠️ Error loading data: {e}")
         return pd.DataFrame()
 
-df = load_data()
 
 if df.empty:
     st.stop()
