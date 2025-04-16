@@ -23,6 +23,8 @@ def load_data():
         st.error(f"⚠️ Error loading data: {e}")
         return pd.DataFrame()
 
+# Load data and check if it is empty
+df = load_data()
 
 if df.empty:
     st.stop()
