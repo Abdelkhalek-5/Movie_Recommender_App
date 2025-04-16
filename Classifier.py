@@ -24,11 +24,12 @@ class ContentBasedRecommender:
     def recommend(self, title, k=5):
         """Recommend top-k similar movies based on content"""
         if title not in self.indices:
-            print("❌ Movie not found!")
+            print(f"❌ Movie '{title}' not found in dataset!")
             return []
-        
+
         idx = self.indices[title]
         sim_scores = list(enumerate(self.sim_matrix[idx]))
-        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:k+1]
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:k+1]  # Exclude the movie itself
         movie_indices = [i[0] for i in sim_scores]
         return self.data[['title', self.feature_column]].iloc[movie_indices]
+
