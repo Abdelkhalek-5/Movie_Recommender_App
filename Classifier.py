@@ -1,36 +1,34 @@
-import numpy as np
-from operator import itemgetter
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
+class ContentBasedRecommender:
+    def __init__(self, data, feature_column):
+        """
+        :param data: DataFrame containing movie info
+        :param feature_column: column used for similarity (e.g., 'genres' or 'description')
+        """
+        self.data = data.copy()
+        self.feature_column = feature_column
+        self.sim_matrix = None
+        self.indices = None
 
-class KNearestNeighbours:
-    def __init__(self, data, target, test_point, k):
-        self.data = data
-        self.target = target
-        self.test_point = test_point
-        self.k = k
-        self.distances = list()
-        self.categories = list()
-        self.indices = list()
-        self.counts = list()
-        self.category_assigned = None
+    def prepare(self):
+        """Vectorize the feature column and compute similarity matrix"""
+        self.data[self.feature_column] = self.data[self.feature_column].fillna('').astype(str)
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(self.data[self.feature_column])
+        self.sim_matrix = cosine_similarity(tfidf_matrix)
+        self.indices = pd.Series(self.data.index, index=self.data['title']).drop_duplicates()
 
-    @staticmethod
-    def dist(p1, p2):
-        """Method returns the euclidean distance between two points"""
-        return np.linalg.norm(np.array(p1) - np.array(p2))
-
-    def fit(self):
-        """Method that performs the KNN classification"""
-        # Create a list of (distance, index) tuples from the test point to each point in the data
-        self.distances.extend([(self.dist(self.test_point, point), i) for point, i in zip(self.data, [i for i in range(len(self.data))])])
-        # Sort the distances in ascending order
-        sorted_li = sorted(self.distances, key=itemgetter(0))
-        # Fetch the indices of the k nearest point from the data
-        self.indices.extend([index for (val, index) in sorted_li[:self.k]])
-        # Fetch the categories from the train data target
-        for i in self.indices:
-            self.categories.append(self.target[i])
-        # Fetch the count for each category from the K nearest neighbours
-        self.counts.extend([(i, self.categories.count(i)) for i in set(self.categories)])
-        # Find the highest repeated category among the K nearest neighbours
-        self.category_assigned = sorted(self.counts, key=itemgetter(1), reverse=True)[0][0]
+    def recommend(self, title, k=5):
+        """Recommend top-k similar movies based on content"""
+        if title not in self.indices:
+            print("❌ Movie not found!")
+            return []
+        
+        idx = self.indices[title]
+        sim_scores = list(enumerate(self.sim_matrix[idx]))
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:k+1]
+        movie_indices = [i[0] for i in sim_scores]
+        return self.data[['title', self.feature_column]].iloc[movie_indices]
