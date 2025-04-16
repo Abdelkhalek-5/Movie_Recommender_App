@@ -16,12 +16,18 @@ st.markdown("Get movie recommendations based on genre similarity.")
 def load_data():
     try:
         df = pd.read_json("Data/movie_data.json")
-        # Ensure 'genres' is a list before joining, else convert to an empty string
+        # Check if 'genres' column exists and is in the correct format
+        if 'genres' not in df.columns:
+            st.error("⚠️ 'genres' column is missing from the dataset.")
+            return pd.DataFrame()
+        
+        # Ensure 'genres' is a list, else replace with an empty string
         df['genres'] = df['genres'].apply(lambda x: ' '.join(x) if isinstance(x, list) else str(x) if x is not None else '')
         return df
     except Exception as e:
         st.error(f"⚠️ Error loading data: {e}")
         return pd.DataFrame()
+
 
 # Load data and check if it is empty
 df = load_data()
